@@ -11,5 +11,4 @@ Feature: Email with image functionality of gmail
 
   Examples:
     | email | image |
-    | jeremy.lentini2@gmail.com | dog.jpg |
-    | jeremy.lentini@mail.mcgill.ca | chunkus.jpg |
+    | mcgill.chungus@gmail.com | dog.jpg |
