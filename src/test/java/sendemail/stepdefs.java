@@ -13,18 +13,22 @@ import java.awt.Robot;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Clipboard;
 import java.awt.Toolkit;
-import java.util.List;
 import java.util.UUID;
 
 import com.sun.glass.events.KeyEvent;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static sendemail.util.TestUtils.*;
 
 public class stepdefs implements En {
 
    private WebDriver driver;
    private final String path = System.getProperty("user.dir");
    private String imageAttachmentName;
+
+   // Identification information to log into the email
+   private final String loginEmail = "mcgill.chungus";
+   private final String loginPass = ",bG7=n|e}+]:";
 
    private final String subjectLine = "Email test, please find attached doggo";
    private String emailText;
@@ -44,27 +48,40 @@ public class stepdefs implements En {
       });
 
       Given("^Open Google Chrome$", () -> {
+         // Open the chrome driver
          driver = new ChromeDriver();
          driver.manage().window().maximize();
       });
 
       And("^login to gmail", () -> {
+         // Navigate to gmail
          driver.navigate().to("https://www.google.com/gmail/");
-         waitForPageLoaded();
-         getWaitOnElement(driver, By.id("identifierId")).sendKeys("mcgill.chungus");
-         driver.findElement(By.id("identifierNext")).click();
-         WebElement passwordTextBox = getWaitOnElement(driver, By.name("password"));
-         waitUntilElementClickableAndClick(passwordTextBox);
-         passwordTextBox.sendKeys(",bG7=n|e}+]:");
+         waitForPageLoaded(driver);
 
+         // Find the identification textbox and write login
+         getWaitOnElement(driver, By.id("identifierId")).sendKeys(loginEmail);
+
+         // Click on the next button
+         driver.findElement(By.id("identifierNext")).click();
+
+         // Find the password textbox and wait till we can interact with it
+         WebElement passwordTextBox = getWaitOnElement(driver, By.name("password"));
+         waitUntilElementClickableAndClick(driver, passwordTextBox);
+
+         // Write the password
+         passwordTextBox.sendKeys(loginPass);
+
+         // Click on the next button
          driver.findElement(By.id("passwordNext")).click();
       });
 
       When("^I compose an email$", () -> {
+         // Click on the compose button
          getWaitOnElement(driver, By.cssSelector(".z0 > div")).click();
       });
 
       And("^enter a valid email as \"([^\"]*)\"$", (String email) -> {
+         // Write the recipient email
          getWaitOnElement(driver, By.name("to")).sendKeys(email);
          driver.findElement(By.className("aoT")).sendKeys(subjectLine);
          driver.findElement(By.cssSelector(".Am.Al.editable.LW-avf")).sendKeys(emailText);
@@ -72,13 +89,22 @@ public class stepdefs implements En {
 
       And("^attach an image as \"([^\"]*)\"$", (String imgName) -> {
          imageAttachmentName = imgName;
+
+         // Click on the add attachment button
          driver.findElement(By.cssSelector(".wG.J-Z-I")).click();
+
+         // Wait till the file explorer pops up
          Thread.sleep(4000);
+
+         // Construct the filepath to the attachment
          String text = path+"\\assets\\" + imgName;
+
+         // Put the image path in the clipboard
          StringSelection stringSelection = new StringSelection(text);
          Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
          clipboard.setContents(stringSelection, stringSelection);
 
+         // Paste the path and hit enter
          Robot robot = new Robot();
          robot.keyPress(KeyEvent.VK_CONTROL);
          robot.keyPress(KeyEvent.VK_V);
@@ -88,9 +114,10 @@ public class stepdefs implements En {
       });
 
       And("^send$", () -> {
-         //wait for attachment to finish loading
+         // wait for attachment to finish loading
           getWaitOnElement(driver, By.partialLinkText(imageAttachmentName));
-          
+
+          // Click on the send button
           getWaitOnElement(driver, By.cssSelector(".T-I.J-J5-Ji.aoO.T-I-atl.L3")).click();
       });
       
@@ -105,6 +132,10 @@ public class stepdefs implements En {
       });
    }
 
+   /**
+    * Wait for the pop up that confirms that the email was sent appears.
+    * @param driver  Web driver
+    */
    private void assertSentPopUp(WebDriver driver){
       try {
          getWaitOnElement(driver, By.cssSelector(".vh"));
@@ -113,17 +144,22 @@ public class stepdefs implements En {
       }
    }
 
+   /**
+    * Navigate to the 'sent' folder, find the email with the body corresponding to what was sent and confirms
+    * that the attachment is present
+    * @param driver  Web Driver
+    */
    private void assertSentFolder(WebDriver driver) {
 
       // Navigate to the sent folder
       driver.navigate().to("https://mail.google.com/mail/#sent");
-      waitForPageLoaded();
+      waitForPageLoaded(driver);
 
       // Make sure that the 'No sent messages! Send one now!' is not present
-
+      //TODO;
 
       // Find the email with the corresponding subject line
-      WebElement emailInInbox = getWaitOnElementWithText(By.cssSelector(".y2"), emailText);
+      WebElement emailInInbox = getWaitOnElementWithText(driver, By.cssSelector(".y2"), emailText);
 
       // If the email we sent is not found, something went wrong
       if (emailInInbox == null) {
@@ -134,7 +170,7 @@ public class stepdefs implements En {
       emailInInbox.click();
 
       // Find the image attachment
-      WebElement attachment = getWaitOnElementWithText(By.cssSelector(".brg"), imageAttachmentName);
+      WebElement attachment = getWaitOnElementWithText(driver, By.cssSelector(".brg"), imageAttachmentName);
 
       if (attachment == null) {
          fail("The attachment sent could not be found in the email");
@@ -142,45 +178,5 @@ public class stepdefs implements En {
 
    }
 
-   private WebElement getWaitOnElement(WebDriver driver, By selector ){
-      return (new WebDriverWait(driver, 10)).until(ExpectedConditions.presenceOfElementLocated(selector));
-   }
 
-   private WebElement getWaitOnElementWithText(By selector, String text) {
-      long now = System.currentTimeMillis();
-      while (System.currentTimeMillis() - now < 10000) {
-
-         List<WebElement> unreadEmailsSubjectLine = driver.findElements(selector);
-
-         for (WebElement element : unreadEmailsSubjectLine) {
-            // Find the element with the subject line we sent
-            if (element.getText().contains(text)) {
-               return element;
-            }
-         }
-      }
-
-      return null;
-   }
-
-   private void waitUntilElementClickableAndClick(WebElement element) {
-      (new WebDriverWait(driver, 10)).until(ExpectedConditions.elementToBeClickable(element));
-      element.click();
-   }
-
-   private void waitForPageLoaded() {
-      ExpectedCondition<Boolean> expectation = new
-              ExpectedCondition<Boolean>() {
-                 public Boolean apply(WebDriver driver) {
-                    return ((JavascriptExecutor) driver).executeScript("return document.readyState").toString().equals("complete");
-                 }
-              };
-      try {
-         Thread.sleep(500);
-         WebDriverWait wait = new WebDriverWait(driver, 30);
-         wait.until(expectation);
-      } catch (Throwable error) {
-         fail("Page not loaded in time");
-      }
-   }
 }
