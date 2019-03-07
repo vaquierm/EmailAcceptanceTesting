@@ -1,5 +1,6 @@
 package sendemail.util;
 
+import com.sun.glass.events.KeyEvent;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -8,6 +9,7 @@ import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.awt.*;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -74,7 +76,12 @@ public class TestUtils {
                     }
                 };
         try {
-            Thread.sleep(500);
+            Thread.sleep(1000);
+
+            // In case there is a pop up to confirm to leave the page
+            Robot robot = new Robot();
+            robot.keyPress(KeyEvent.VK_ENTER);
+
             WebDriverWait wait = new WebDriverWait(driver, 30);
             wait.until(expectation);
         } catch (Throwable error) {

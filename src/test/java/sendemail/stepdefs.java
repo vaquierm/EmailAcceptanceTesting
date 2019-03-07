@@ -30,8 +30,7 @@ public class stepdefs implements En {
    private final String loginEmail = "mcgill.chungus";
    private final String loginPass = ",bG7=n|e}+]:";
 
-   private final String subjectLine = "Email test, please find attached doggo";
-   private String emailText;
+   private String uniqueText;
 
 
    public stepdefs() {
@@ -40,7 +39,7 @@ public class stepdefs implements En {
          System.setProperty("webdriver.chrome.driver",path+"\\chromedriver\\chromedriver.exe");
 
          // Generate a random string for the subject line of the test
-         emailText = UUID.randomUUID().toString();
+         uniqueText = UUID.randomUUID().toString();
       });
 
       After(() -> {
@@ -66,6 +65,7 @@ public class stepdefs implements En {
 
          // Find the password textbox and wait till we can interact with it
          WebElement passwordTextBox = getWaitOnElement(driver, By.name("password"));
+         Thread.sleep(1000);
          waitUntilElementClickableAndClick(driver, passwordTextBox);
 
          // Write the password
@@ -83,8 +83,16 @@ public class stepdefs implements En {
       And("^enter a valid email as \"([^\"]*)\"$", (String email) -> {
          // Write the recipient email
          getWaitOnElement(driver, By.name("to")).sendKeys(email);
-         driver.findElement(By.className("aoT")).sendKeys(subjectLine);
-         driver.findElement(By.cssSelector(".Am.Al.editable.LW-avf")).sendKeys(emailText);
+      });
+
+      And("^enter a email subject$", () -> {
+         // Write the subject line
+         driver.findElement(By.className("aoT")).sendKeys(uniqueText);
+      });
+
+      And("^enter a body to the email$", () -> {
+         // Write the email text
+         driver.findElement(By.cssSelector(".Am.Al.editable.LW-avf")).sendKeys(uniqueText);
       });
 
       And("^attach an image as \"([^\"]*)\"$", (String imgName) -> {
@@ -119,17 +127,31 @@ public class stepdefs implements En {
 
           // Click on the send button
           getWaitOnElement(driver, By.cssSelector(".T-I.J-J5-Ji.aoO.T-I-atl.L3")).click();
-      });
-      
-      Then("^the email should be sent successfully$", () -> {
 
+          // Wait for the email to send
+          Thread.sleep(1000);
+      });
+
+
+      Then("^The 'Message Sent' popup appears$", () -> {
          // Make sure that the pop up indicating that the email was sent shows up
          assertSentPopUp(driver);
+      });
 
+      And("^The email can be found in the 'Sent' tab$", () -> {
          // Make sure that the email that was just sent can be found in the sent folder
          assertSentFolder(driver);
-
       });
+      And("^confirm sending the email without a subject line$", () -> {
+         // Wait for the pop up to show
+         Thread.sleep(1000);
+
+         // Hit enter to confirm
+         Robot robot = new Robot();
+         robot.keyPress(KeyEvent.VK_ENTER);
+      });
+      
+
    }
 
    /**
@@ -156,18 +178,30 @@ public class stepdefs implements En {
       waitForPageLoaded(driver);
 
       // Make sure that the 'No sent messages! Send one now!' is not present
-      //TODO;
+      try {
+         // Try to find the button
+         driver.findElement(By.id(":76"));
+
+         //If no exceptions were thrown then it is there. This is not expected
+         fail("No emails were found in the sent folder");
+      } catch (Exception e) {
+
+      }
 
       // Find the email with the corresponding subject line
-      WebElement emailInInbox = getWaitOnElementWithText(driver, By.cssSelector(".y2"), emailText);
+      WebElement emailInSent = getWaitOnElementWithText(driver, By.cssSelector(".y2"), uniqueText);
+
+      if (emailInSent == null) {
+         emailInSent = getWaitOnElementWithText(driver, By.cssSelector(".bqe"), uniqueText);
+      }
 
       // If the email we sent is not found, something went wrong
-      if (emailInInbox == null) {
+      if (emailInSent == null) {
          fail("The email could not be found in the 'Sent' folder");
       }
 
       // Click on the email to confirm that the attachment is there
-      emailInInbox.click();
+      emailInSent.click();
 
       // Find the image attachment
       WebElement attachment = getWaitOnElementWithText(driver, By.cssSelector(".brg"), imageAttachmentName);
