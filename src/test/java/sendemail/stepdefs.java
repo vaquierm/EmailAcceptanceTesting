@@ -13,6 +13,7 @@ import java.awt.Robot;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Clipboard;
 import java.awt.Toolkit;
+import java.util.List;
 import java.util.UUID;
 
 import com.sun.glass.events.KeyEvent;
@@ -150,7 +151,33 @@ public class stepdefs implements En {
          Robot robot = new Robot();
          robot.keyPress(KeyEvent.VK_ENTER);
       });
-      
+      And("^I navigate to my empty 'Sent' folder$", () -> {
+         waitForPageLoaded(driver);
+         Thread.sleep(2500);
+         driver.navigate().to("https://mail.google.com/mail/#sent");
+         waitForPageLoaded(driver);
+
+         // Delete all emails
+         WebElement selectAll = getWaitOnElement(driver, By.cssSelector(".T-Jo.J-J5-Ji"));
+         selectAll.click();
+         try {
+            getWaitOnElement(driver, By.cssSelector(".T-I.J-J5-Ji.nX.T-I-ax7.T-I-Js-Gs.mA")).click();
+         } catch (Exception e) {
+            //The element is not interactable
+            selectAll.click();
+         }
+
+
+      });
+      When("^I click on 'Send one now'$", () -> {
+         // Find the button 'Send one now'
+         WebElement e = getWaitOnElementWithText(driver, By.cssSelector(".x0"), "Send");
+
+         Thread.sleep(1500);
+
+         e.click();
+      });
+
 
    }
 
@@ -180,7 +207,7 @@ public class stepdefs implements En {
       // Make sure that the 'No sent messages! Send one now!' is not present
       try {
          // Try to find the button
-         driver.findElement(By.id(":76"));
+         driver.findElement(By.cssSelector(".x0"));
 
          //If no exceptions were thrown then it is there. This is not expected
          fail("No emails were found in the sent folder");
