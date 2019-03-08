@@ -146,7 +146,19 @@ public class SendEmailWithImageSteps implements En {
       When("^I compose from the sent page$", () -> {
          // Find the button 'Send one now'
          WebElement e = getWaitOnElement(driver,By.xpath("//*[text() = 'Send']"));
-         e.click();
+
+         WebElement popUp = null;
+         long now = System.currentTimeMillis();
+         while (popUp == null && System.currentTimeMillis() - now < 5000) {
+            e.click();
+
+            try {
+               popUp = driver.findElement(By.name("to"));
+            } catch (Exception ex) {
+
+            }
+
+         }
       });
 
       Then("^I should be notified that email \"([^\"]*)\" is invalid$", (String email) -> {
