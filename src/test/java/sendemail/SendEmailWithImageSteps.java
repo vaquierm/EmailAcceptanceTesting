@@ -129,9 +129,6 @@ public class SendEmailWithImageSteps implements En {
 
           // Click on the send button
           getWaitOnElement(driver, By.cssSelector(".T-I.J-J5-Ji.aoO.T-I-atl.L3")).click();
-
-          // Wait for the email to send
-          Thread.sleep(1000);
       });
 
 
@@ -168,8 +165,7 @@ public class SendEmailWithImageSteps implements En {
       });
       When("^I compose from the sent page$", () -> {
          // Find the button 'Send one now'
-         WebElement e = getWaitOnElement(driver, By.xpath("//*[text() = 'Send']"));
-
+         WebElement e = getWaitOnElementWithText(driver, By.cssSelector(".x0"), "Send");
          e.click();
       });
 
