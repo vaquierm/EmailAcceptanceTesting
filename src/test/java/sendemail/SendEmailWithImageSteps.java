@@ -3,17 +3,11 @@ package sendemail;
 
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.interactions.Actions;
 
 import cucumber.api.java8.En;
 import sendemail.util.TestUtils;
-
-import java.awt.Robot;
-import java.awt.datatransfer.StringSelection;
-import java.awt.datatransfer.Clipboard;
-import java.awt.Toolkit;
 import java.util.UUID;
-
-import com.sun.glass.events.KeyEvent;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static sendemail.util.TestUtils.*;
@@ -34,6 +28,7 @@ public class SendEmailWithImageSteps implements En {
 
 
    public SendEmailWithImageSteps() {
+      //check initial state before each test
       Before(() ->{
          //check if no open Chrome window exists
          assertNull(driver);
@@ -41,6 +36,7 @@ public class SendEmailWithImageSteps implements En {
          uniqueText = UUID.randomUUID().toString();
       });
 
+      //return state to initial state
       After(() -> {
          driver.quit();
          driver = null;
@@ -100,28 +96,12 @@ public class SendEmailWithImageSteps implements En {
       And("^attach an image as \"([^\"]*)\"$", (String imgName) -> {
          imageAttachmentName = imgName;
 
-         // Click on the add attachment button
-         driver.findElement(By.cssSelector(".wG.J-Z-I")).click();
-
-         // Wait till the file explorer pops up
-         Thread.sleep(4000);
-
          // Construct the filepath to the attachment
          String text = getPathName("assets", imgName);
 
-         // Put the image path in the clipboard
-         StringSelection stringSelection = new StringSelection(text);
-
-         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-         clipboard.setContents(stringSelection, stringSelection);
-
-         // Paste the path and hit enter
-         Robot robot = new Robot();
-         robot.keyPress(KeyEvent.VK_CONTROL);
-         robot.keyPress(KeyEvent.VK_V);
-         robot.keyRelease(KeyEvent.VK_V);
-         robot.keyRelease(KeyEvent.VK_CONTROL);
-         robot.keyPress(KeyEvent.VK_ENTER);
+         //attach image
+         WebElement attachFile = getWaitOnElement(driver,By.name("Filedata"));
+         attachFile.sendKeys(text);
       });
 
       And("^send$", () -> {
@@ -165,7 +145,7 @@ public class SendEmailWithImageSteps implements En {
       });
       When("^I compose from the sent page$", () -> {
          // Find the button 'Send one now'
-         WebElement e = getWaitOnElementWithText(driver, By.cssSelector(".x0"), "Send");
+         WebElement e = getWaitOnElement(driver,By.xpath("//*[text() = 'Send']"));
          e.click();
       });
 
@@ -178,6 +158,7 @@ public class SendEmailWithImageSteps implements En {
          }
       });
 
+      Then("^remove the image$", () -> getWaitOnElement(driver, By.cssSelector(".vq")).click());
 
    }
 

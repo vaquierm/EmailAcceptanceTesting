@@ -23,7 +23,7 @@ public class TestUtils {
      * @return The element
      */
     public static WebElement getWaitOnElement(WebDriver driver, By selector ){
-        return (new WebDriverWait(driver, 10)).until(ExpectedConditions.presenceOfElementLocated(selector));
+        return (new WebDriverWait(driver, 20)).until(ExpectedConditions.presenceOfElementLocated(selector));
     }
 
     /**
