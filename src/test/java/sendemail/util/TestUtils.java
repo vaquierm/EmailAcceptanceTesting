@@ -1,16 +1,12 @@
 package sendemail.util;
 
-import com.sun.glass.events.KeyEvent;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.awt.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -62,19 +58,14 @@ public class TestUtils {
         (new WebDriverWait(driver, 10)).until(ExpectedConditions.elementToBeClickable(element));
     }
 
-    /**
-     * Wait for the web page to be fully loaded
-     * 30s time out
-     * @param driver  Web driver
-     */
-    public static void waitForPageLoaded(WebDriver driver) {
-        try {
-
-           new WebDriverWait(driver, 6).until(
-                   webDriver -> ((JavascriptExecutor) webDriver).executeScript("return document.readyState").equals("complete"));
-        } catch (Throwable error) {
-            fail("Page not loaded in time");
-        }
+   /**
+    * Wait for element to be visible
+    * @param driver
+    * @param selector
+    * @return
+    */
+    public static WebElement waitUntilElementVisible(WebDriver driver, By selector) {
+       return new WebDriverWait(driver, 10).until(ExpectedConditions.visibilityOfElementLocated(selector));
     }
 
    /**

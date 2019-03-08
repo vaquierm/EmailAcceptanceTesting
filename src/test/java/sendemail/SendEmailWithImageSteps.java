@@ -12,7 +12,6 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Clipboard;
 import java.awt.Toolkit;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import com.sun.glass.events.KeyEvent;
 
@@ -48,7 +47,6 @@ public class SendEmailWithImageSteps implements En {
          // Open the chrome driver
          driver = new ChromeDriver();
          driver.manage().window().maximize();
-         driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
       });
 
       And("^login to gmail", () -> {
@@ -149,7 +147,6 @@ public class SendEmailWithImageSteps implements En {
          //wait to finish sign in
          getWaitOnElement(driver, By.xpath("//*[text() = 'Compose']"));
          driver.navigate().to("https://mail.google.com/mail/#sent");
-         waitForPageLoaded(driver);
 
          // Delete all emails
          WebElement selectAll = getWaitOnElement(driver, By.cssSelector(".T-Jo.J-J5-Ji"));
@@ -172,7 +169,7 @@ public class SendEmailWithImageSteps implements En {
       Then("^I should be notified that email \"([^\"]*)\" is invalid$", (String email) -> {
          //wait for OK in error modal to show up
          try{
-            getWaitOnElement(driver, By.xpath("//*[text() = 'OK']"));
+            waitUntilElementVisible(driver, By.xpath("//*[text() = 'The address \""+ email + "\" in the \"To\" field was not recognized. Please make sure that all addresses are properly formed.']"));
          } catch (TimeoutException e) {
             fail("Error modal should be shown");
          }
@@ -202,12 +199,11 @@ public class SendEmailWithImageSteps implements En {
 
       // Navigate to the sent folder
       driver.navigate().to("https://mail.google.com/mail/#sent");
-      waitForPageLoaded(driver);
 
-      // Make sure that the 'No sent messages! Send one now!' is not present
+//       Make sure that the 'No sent messages! Send one now!' is not present
       try {
          // Try to find the button
-         driver.findElement(By.cssSelector(".x0"));
+         waitUntilElementVisible(driver, By.cssSelector(".x0"));
 
          //If no exceptions were thrown then it is there. This is not expected
          fail("No emails were found in the sent folder");
