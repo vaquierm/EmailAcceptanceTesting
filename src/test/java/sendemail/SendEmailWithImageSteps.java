@@ -3,28 +3,25 @@ package sendemail;
 
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.support.ui.ExpectedCondition;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import cucumber.api.java8.En;
+import sendemail.util.TestUtils;
 
 import java.awt.Robot;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Clipboard;
 import java.awt.Toolkit;
-import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import com.sun.glass.events.KeyEvent;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static sendemail.util.TestUtils.*;
 
-public class stepdefs implements En {
+public class SendEmailWithImageSteps implements En {
 
    private WebDriver driver;
-   private final String path = System.getProperty("user.dir");
    private String imageAttachmentName;
 
    // Identification information to log into the email
@@ -34,10 +31,10 @@ public class stepdefs implements En {
    private String uniqueText;
 
 
-   public stepdefs() {
+   public SendEmailWithImageSteps() {
       Before(() ->{
          // Set the path to the chrome driver
-         System.setProperty("webdriver.chrome.driver",path+"\\chromedriver\\chromedriver.exe");
+         System.setProperty("webdriver.chrome.driver",TestUtils.getPathName("chromedriver", "chromedriver.exe"));
 
          // Generate a random string for the subject line of the test
          uniqueText = UUID.randomUUID().toString();
@@ -51,23 +48,26 @@ public class stepdefs implements En {
          // Open the chrome driver
          driver = new ChromeDriver();
          driver.manage().window().maximize();
+         driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
       });
 
       And("^login to gmail", () -> {
          // Navigate to gmail
          driver.navigate().to("https://www.google.com/gmail/");
-         waitForPageLoaded(driver);
 
-         // Find the identification textbox and write login
-         getWaitOnElement(driver, By.id("identifierId")).sendKeys(loginEmail);
+         // Find the identification textbox and wait till we can interact with it
+         WebElement usernameBox = getWaitOnElement(driver, By.id("identifierId"));
+         waitUntilElementClickable(driver, usernameBox);
+
+         //write email
+         usernameBox.sendKeys(loginEmail);
 
          // Click on the next button
          driver.findElement(By.id("identifierNext")).click();
 
          // Find the password textbox and wait till we can interact with it
          WebElement passwordTextBox = getWaitOnElement(driver, By.name("password"));
-         Thread.sleep(1000);
-         waitUntilElementClickableAndClick(driver, passwordTextBox);
+         waitUntilElementClickable(driver, passwordTextBox);
 
          // Write the password
          passwordTextBox.sendKeys(loginPass);
@@ -78,10 +78,10 @@ public class stepdefs implements En {
 
       When("^I compose an email$", () -> {
          // Click on the compose button
-         getWaitOnElement(driver, By.cssSelector(".z0 > div")).click();
+         getWaitOnElement(driver, By.xpath("//*[text() = 'Compose']")).click();
       });
 
-      And("^enter a valid email as \"([^\"]*)\"$", (String email) -> {
+      And("^enter an email as \"([^\"]*)\"$", (String email) -> {
          // Write the recipient email
          getWaitOnElement(driver, By.name("to")).sendKeys(email);
       });
@@ -106,10 +106,11 @@ public class stepdefs implements En {
          Thread.sleep(4000);
 
          // Construct the filepath to the attachment
-         String text = path+"\\assets\\" + imgName;
+         String text = getPathName("assets", imgName);
 
          // Put the image path in the clipboard
          StringSelection stringSelection = new StringSelection(text);
+
          Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
          clipboard.setContents(stringSelection, stringSelection);
 
@@ -143,17 +144,13 @@ public class stepdefs implements En {
          // Make sure that the email that was just sent can be found in the sent folder
          assertSentFolder(driver);
       });
-      And("^confirm sending the email without a subject line$", () -> {
-         // Wait for the pop up to show
-         Thread.sleep(1000);
-
-         // Hit enter to confirm
-         Robot robot = new Robot();
-         robot.keyPress(KeyEvent.VK_ENTER);
+      And("^confirm sending the email without a subject line or body$", () -> {
+         // Wait for the pop up to show and accept
+         checkAndConfirmAlert(driver);
       });
       And("^I navigate to my empty 'Sent' folder$", () -> {
-         waitForPageLoaded(driver);
-         Thread.sleep(2500);
+         //wait to finish sign in
+         getWaitOnElement(driver, By.xpath("//*[text() = 'Compose']"));
          driver.navigate().to("https://mail.google.com/mail/#sent");
          waitForPageLoaded(driver);
 
@@ -169,13 +166,20 @@ public class stepdefs implements En {
 
 
       });
-      When("^I click on 'Send one now'$", () -> {
+      When("^I compose from the sent page$", () -> {
          // Find the button 'Send one now'
-         WebElement e = getWaitOnElementWithText(driver, By.cssSelector(".x0"), "Send");
-
-         Thread.sleep(1500);
+         WebElement e = getWaitOnElement(driver, By.xpath("//*[text() = 'Send']"));
 
          e.click();
+      });
+
+      Then("^I should be notified that email \"([^\"]*)\" is invalid$", (String email) -> {
+         //wait for OK in error modal to show up
+         try{
+            getWaitOnElement(driver, By.xpath("//*[text() = 'OK']"));
+         } catch (TimeoutException e) {
+            fail("Error modal should be shown");
+         }
       });
 
 
@@ -187,7 +191,7 @@ public class stepdefs implements En {
     */
    private void assertSentPopUp(WebDriver driver){
       try {
-         getWaitOnElement(driver, By.cssSelector(".vh"));
+         WebElement e = getWaitOnElement(driver, By.xpath("//*[text() = 'Message sent.']"));
       } catch (TimeoutException e){
          fail("The pop up that confirms the email was sent did not appear");
       }
@@ -231,11 +235,12 @@ public class stepdefs implements En {
       emailInSent.click();
 
       // Find the image attachment
-      WebElement attachment = getWaitOnElementWithText(driver, By.cssSelector(".brg"), imageAttachmentName);
+      WebElement attachment = getWaitOnElement(driver,By.xpath("//*[text() = 'Preview attachment "+imageAttachmentName+"']"));
 
       if (attachment == null) {
          fail("The attachment sent could not be found in the email");
       }
+
 
    }
 
