@@ -20,7 +20,7 @@ import static sendemail.util.TestUtils.*;
 
 public class SendEmailWithImageSteps implements En {
 
-   private WebDriver driver;
+   private WebDriver driver = null;
    private String imageAttachmentName;
 
    // Identification information to log into the email
@@ -29,18 +29,21 @@ public class SendEmailWithImageSteps implements En {
 
    private String uniqueText;
 
+   private String sysPath = // Set the path to the chrome driver
+           System.setProperty("webdriver.chrome.driver",TestUtils.getPathName("chromedriver", "chromedriver.exe"));
+
 
    public SendEmailWithImageSteps() {
       Before(() ->{
-         // Set the path to the chrome driver
-         System.setProperty("webdriver.chrome.driver",TestUtils.getPathName("chromedriver", "chromedriver.exe"));
-
+         //check if no open Chrome window exists
+         assertNull(driver);
          // Generate a random string for the subject line of the test
          uniqueText = UUID.randomUUID().toString();
       });
 
       After(() -> {
-         driver.close();
+         driver.quit();
+         driver = null;
       });
 
       Given("^Open Google Chrome$", () -> {
