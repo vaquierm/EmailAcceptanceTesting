@@ -170,7 +170,7 @@ public class SendEmailWithImageSteps implements En {
          }
       });
 
-      Then("^remove the image$", () -> getWaitOnElement(driver, By.cssSelector(".vq")).click());
+      And("^remove the image$", () -> getWaitOnElement(driver, By.cssSelector(".vq")).click());
 
    }
 

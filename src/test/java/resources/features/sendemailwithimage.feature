@@ -74,7 +74,7 @@ Feature: Email with image functionality of gmail
      And enter a email subject
      And enter a body to the email
      And attach an image as "<image1>"
-     Then remove the image
+     And remove the image
      And attach an image as "<image2>"
      And send
      Then The 'Message Sent' popup appears
